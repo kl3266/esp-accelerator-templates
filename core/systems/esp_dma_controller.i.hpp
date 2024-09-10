@@ -14,13 +14,11 @@ void esp_dma_controller<_DMA_WIDTH_, _MEM_SIZE_>::controller()
     dma_read_chnl.reset_put();
     dma_write_ctrl.reset_get();
     dma_write_chnl.reset_get();
-    dma_write_rsp.reset_put();
     #else
     dma_read_ctrl.reset();
     dma_read_chnl.reset();
     dma_write_ctrl.reset();
     dma_write_chnl.reset();
-    dma_write_rsp.reset();
     #endif
 
     acc_rst.write(false);
@@ -35,7 +33,6 @@ void esp_dma_controller<_DMA_WIDTH_, _MEM_SIZE_>::controller()
         do { wait(); }
         while ( !dma_read_ctrl.nb_can_get()
                 && !dma_write_ctrl.nb_can_get()
-                && !dma_write_rsp.can_put()
                 && !acc_done.read());
 
         // Kernel is done
@@ -83,7 +80,6 @@ void esp_dma_controller<_DMA_WIDTH_, _MEM_SIZE_>::controller()
         // Write request
 
         if (dma_write_ctrl.nb_can_get() 
-            && dma_write_rsp.can_put()
            )
         {
             dma_info_t dma_info;
@@ -99,12 +95,6 @@ void esp_dma_controller<_DMA_WIDTH_, _MEM_SIZE_>::controller()
             total_write_bytes += dma_info.length * (_DMA_WIDTH_ / 8);
 
             dma_write(mem_base, burst_size);
-
-            bool flag_rsp = dma_write_rsp.put("0");
-            sc_assert(flag_rsp);
-            
-            ESP_REPORT_DEBUG("write response repeat = 0");
-
         }
     }
 }
